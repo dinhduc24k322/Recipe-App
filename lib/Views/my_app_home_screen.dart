@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:recipe_app/Utils/constants.dart';
+import 'package:recipe_app/Views/view_all_items.dart';
 import 'package:recipe_app/Widget/banner.dart';
 import 'package:recipe_app/Widget/food_items_display.dart';
 import 'package:recipe_app/Widget/my_icon_button.dart';
@@ -76,7 +77,12 @@ class _MyAppHomeScreenState extends State<MyAppHomeScreen> {
                       ),
                       TextButton(
                         onPressed: () {
-                          //later
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ViewAllItems(),
+                            ),
+                          );
                         },
                         child: Text(
                           "View all",
