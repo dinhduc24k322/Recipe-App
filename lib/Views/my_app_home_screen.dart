@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:recipe_app/Utils/constants.dart';
 import 'package:recipe_app/Widget/banner.dart';
+import 'package:recipe_app/Widget/food_items_display.dart';
 import 'package:recipe_app/Widget/my_icon_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -14,8 +15,20 @@ class MyAppHomeScreen extends StatefulWidget {
 
 class _MyAppHomeScreenState extends State<MyAppHomeScreen> {
   String category = "All";
+  //for category
+
   final CollectionReference categoriesItems =
       FirebaseFirestore.instance.collection("App-Category");
+  //for all items display
+  Query get fileteredRecipes =>
+      FirebaseFirestore.instance.collection("Complete-Flutter-App").where(
+            'category',
+            isEqualTo: category,
+          );
+  Query get allRecipes =>
+      FirebaseFirestore.instance.collection("Complete-Flutter-App");
+  Query get selectedRecipes =>
+      category == "All" ? allRecipes : fileteredRecipes;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,6 +38,7 @@ class _MyAppHomeScreenState extends State<MyAppHomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            SizedBox(height: 10),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 15),
               child: Column(
@@ -47,49 +61,114 @@ class _MyAppHomeScreenState extends State<MyAppHomeScreen> {
                     ),
                   ),
                   //for category
-                  StreamBuilder(
-                    stream: categoriesItems.snapshots(),
-                    builder:
-                        (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
-                      if (streamSnapshot.hasData) {
-                        return SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: List.generate(
-                              streamSnapshot.data!.docs.length,
-                              (index) => GestureDetector(
-                                onTap: () {},
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(25),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 20, vertical: 10),
-                                  margin: const EdgeInsets.only(right: 20),
-                                  child: Text(
-                                    streamSnapshot.data!.docs[index]["name"],
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
+                  selectedCategory(),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Quick & Easy",
+                        style: TextStyle(
+                          fontSize: 20,
+                          letterSpacing: 0.1,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          //later
+                        },
+                        child: Text(
+                          "View all",
+                          style: TextStyle(
+                            color: kBannerColor,
+                            fontWeight: FontWeight.w600,
                           ),
-                        );
-                      }
-                      // it mean if snapshot has date then show the date otherwise show the progress bar
-                      return Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    },
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
+            ),
+            StreamBuilder(
+              stream: selectedRecipes.snapshots(),
+              builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                if (snapshot.hasData) {
+                  final List<DocumentSnapshot> recipes =
+                      snapshot.data?.docs ?? [];
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 5, left: 15),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: recipes
+                            .map((e) => FoodItemsDisplay(documentSnapshot: e))
+                            .toList(),
+                      ),
+                    ),
+                  );
+                }
+                // it mean if snapshot has date then show the date otherwise show the progress bar
+                return Center(
+                  child: CircularProgressIndicator(),
+                );
+              },
             )
           ],
         ),
       )),
+    );
+  }
+
+  StreamBuilder<QuerySnapshot<Object?>> selectedCategory() {
+    return StreamBuilder(
+      stream: categoriesItems.snapshots(),
+      builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
+        if (streamSnapshot.hasData) {
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: List.generate(
+                streamSnapshot.data!.docs.length,
+                (index) => GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      category = streamSnapshot.data!.docs[index]["name"];
+                    });
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(25),
+                      color:
+                          category == streamSnapshot.data!.docs[index]["name"]
+                              ? kprimaryColor
+                              : Colors.white,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    margin: const EdgeInsets.only(right: 20),
+                    child: Text(
+                      streamSnapshot.data!.docs[index]["name"],
+                      style: TextStyle(
+                        color:
+                            category == streamSnapshot.data!.docs[index]["name"]
+                                ? Colors.white
+                                : Colors.grey.shade600,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+        // it mean if snapshot has date then show the date otherwise show the progress bar
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      },
     );
   }
 
